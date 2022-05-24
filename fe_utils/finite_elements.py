@@ -31,7 +31,7 @@ def lagrange_points(cell, degree):
         k=0
         for i in range(0,degree+1):
             for j in range(0,degree+1-i):
-                x[k] = [i/degree,j/degree]
+                x[k] = [j/degree,i/degree]
                 k += 1
     else:
         raise NotImplementedError
@@ -209,21 +209,20 @@ class LagrangeElement(FiniteElement):
         """
 
         nodes = lagrange_points(cell, degree)
-        entity_node = {d: {e: [] for e in range(cell.entity_counts[d])} for d in range(cell.dim+1) }
+        entity_nodes = {d: {e: [] for e in range(cell.entity_counts[d])} for d in range(cell.dim+1) }
 
         entities=[(d, e)
                  for d in cell.topology.keys()
                  for e in cell.topology[d].keys()]
-        print(entities)
 
         for i, n in enumerate(nodes):
             for (d, e) in entities: 
                 if cell.point_in_entity(n, (d, e)):
-                    entity_node[d][e].append(i)
+                    entity_nodes[d][e].append(i)
                     break
 
         # Use lagrange_points to obtain the set of nodes.  Once you
         # have obtained nodes, the following line will call the
         # __init__ method on the FiniteElement class to set up the
         # basis coefficients.
-        super(LagrangeElement, self).__init__(cell, degree, nodes, entity_node)
+        super(LagrangeElement, self).__init__(cell, degree, nodes, entity_nodes)
