@@ -20,10 +20,9 @@ class FunctionSpace(object):
 
         #: The :class:`~.mesh.Mesh` on which this space is built.
         self.mesh = mesh
+       
         #: The :class:`~.finite_elements.FiniteElement` of this space.
         self.element = element
-
-        raise NotImplementedError
 
         # Implement global numbering in order to produce the global
         # cell node list for this space.
@@ -31,7 +30,24 @@ class FunctionSpace(object):
         #: which each row lists the global nodes incident to the corresponding
         #: cell. The implementation of this member is left as an
         #: :ref:`exercise <ex-function-space>`
-        self.cell_nodes = None
+        self.cell_nodes = np.zeros((mesh.entity_counts[-1],element.node_count),dtype=np.int32)
+        
+        for c in range(mesh.entity_counts[-1]):
+            for d in range(mesh.dim+1): 
+                adj = mesh.adjacency(mesh.dim, d)[c, :] if d < mesh.dim else [c]
+                for i,e in enumerate(adj):
+                    Nd = element.nodes_per_entity[d]
+                    G=0
+                    for delta in range(d):
+                        N = element.nodes_per_entity[delta]
+                        E = mesh.entity_counts[delta]
+                        G += N*E
+                    G = G + e*Nd
+                    if Nd>1:
+                        for n in range(Nd):
+                            self.cell_nodes[c,element.entity_nodes[d][i][n]]=G+n
+                    else:
+                        self.cell_nodes[c,element.entity_nodes[d][i]]=G
 
         #: The total number of nodes in the function space.
         self.node_count = np.dot(element.nodes_per_entity, mesh.entity_counts)
