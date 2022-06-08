@@ -3,6 +3,7 @@ import numpy as np
 import itertools
 from .finite_elements import LagrangeElement
 from .reference_elements import ReferenceTriangle, ReferenceInterval
+from .function_spaces import FunctionSpace
 
 
 class Mesh(object):
@@ -111,7 +112,18 @@ class Mesh(object):
         :result: The Jacobian for cell ``c``.
         """
 
-        raise NotImplementedError
+        # Create a map from the vertices to the element nodes on the
+        # reference cell.
+        cg1 = LagrangeElement(self.cell, 1)
+        origin = np.zeros(shape = (1, self.dim) )
+        coord_map = cg1.tabulate(origin,grad=True)[0,:,:]
+        cg1fs = FunctionSpace(self, cg1)
+
+        # Interpolate the coordinates to the cell nodes.
+        vertex_coords = self.vertex_coords[self.cell_vertices[c, :], :]
+        jacob = np.dot(coord_map.T, vertex_coords)
+        return jacob.T    
+
 
 
 class UnitIntervalMesh(Mesh):

@@ -57,7 +57,6 @@ def vandermonde_matrix(cell, degree, points, grad=False):
     points = np.array(points)
     if grad is True:
         if cell is ReferenceInterval:
-            #v = np.ndarray(shape=(degree+2,degree+1), dtype=float)
             V = np.zeros((points.shape[0],degree+1,1))
             V[:,0] = 0
             for j in range(1,degree+1):
@@ -77,7 +76,6 @@ def vandermonde_matrix(cell, degree, points, grad=False):
                         m+=1
     if grad is False:
         if cell is ReferenceInterval:
-            #v = np.ndarray(shape=(degree+2,degree+1), dtype=float)
             V = np.zeros((points.shape[0],degree+1))
             for j in range(0,degree+1):
                 for i in range(0,points.shape[0]):

@@ -15,19 +15,42 @@ def assemble(fs, f):
     the function space in which to solve and the right hand side
     function."""
 
-    raise NotImplementedError
+    fe = fs.element
 
     # Create an appropriate (complete) quadrature rule.
+    QR = gauss_quadrature(fe.cell, fe.degree*2)
 
     # Tabulate the basis functions and their gradients at the quadrature points.
+    phi = fe.tabulate(QR.points)
+    grad_phi = fe.tabulate(QR.points, grad=True)
+    phi_f = f.function_space.element.tabulate(QR.points)
 
     # Create the left hand side matrix and right hand side vector.
+
     # This creates a sparse matrix because creating a dense one may
     # well run your machine out of memory!
     A = sp.lil_matrix((fs.node_count, fs.node_count))
     l = np.zeros(fs.node_count)
 
     # Now loop over all the cells and assemble A and l
+
+    for c in range(fs.mesh.entity_counts[-1]):
+            nodes = fs.cell_nodes[c,:]
+            f_nodes = f.function_space.cell_nodes[c,:]
+
+            #Construct the jacobian() for that cell and take the absolute value of its determinant
+            J = fs.mesh.jacobian(c)
+            det_J = np.abs(np.linalg.det(J))
+            inv_J = np.linalg.inv(J)
+
+            # Compute l
+            l[nodes] += np.einsum("qi,qk,k,q->i", phi,phi_f,f.values[f_nodes],QR.weights) * det_J
+            
+            # Compute A
+            a = (np.einsum("ba,qib,ka,qjk,q->ij", inv_J,grad_phi,inv_J,grad_phi,QR.weights) +
+                 np.einsum("qi,qj,q->ij", phi,phi,QR.weights)) * det_J
+
+            A[np.ix_(nodes,nodes)] += a
 
     return A, l
 

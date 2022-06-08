@@ -1,10 +1,12 @@
+from multiprocessing import set_forkserver_preload
 import numpy as np
 from . import ReferenceTriangle, ReferenceInterval
 from .finite_elements import LagrangeElement, lagrange_points
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.tri import Triangulation
-
+from fe_utils import *
+from .quadrature import gauss_quadrature
 
 class FunctionSpace(object):
 
@@ -182,5 +184,26 @@ class Function(object):
         """Integrate this :class:`Function` over the domain.
 
         :result: The integral (a scalar)."""
+        fe = self.function_space.element
 
-        raise NotImplementedError
+        # Construct a suitable QuadratureRule.
+        QR = gauss_quadrature(fe.cell, fe.degree*2)
+
+        # tabulate() the basis functions at each quadrature point.
+        phi = fe.tabulate(QR.points)
+        
+        fs = self.function_space
+        integral = 0
+
+        # Visit each cell in turn.
+        for c in range(fs.mesh.entity_counts[-1]):
+            nodes = fs.cell_nodes[c,:]
+
+            #Construct the jacobian() for that cell and take the absolute value of its determinant
+            J = fs.mesh.jacobian(c)
+            det_J = np.abs(np.linalg.det(J))
+            valueself = self.values
+            # Compute the integral in each cell and sum
+            integral += np.dot(np.dot(self.values[nodes],phi.T),QR.weights) * det_J
+
+        return integral
