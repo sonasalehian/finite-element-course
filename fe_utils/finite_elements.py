@@ -54,6 +54,7 @@ def vandermonde_matrix(cell, degree, points, grad=False):
     The implementation of this function is left as an :ref:`exercise
     <ex-vandermonde>`.
     """
+    points = np.array(points)
     if grad is True:
         if cell is ReferenceInterval:
             #v = np.ndarray(shape=(degree+2,degree+1), dtype=float)
